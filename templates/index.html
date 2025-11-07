@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Falcon Chat PDF</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h2>🤖 Falcon Chat PDF</h2>
+      <p class="sub-header">Asistente inteligente para análisis de documentos</p>
+    </div>
+
+    <div id="chat-box" class="chat-box">
+      <div class="bot-message">
+        <strong>Falcon:</strong> 👋 Hola, soy <b>Falcon</b>. Sube tu archivo PDF y luego elige una de las opciones para analizarlo.
+      </div>
+    </div>
+
+    <form id="upload-form" class="upload-form">
+      <input type="file" id="pdf-file" name="file" accept="application/pdf" required>
+      <div class="button-group">
+        <button type="button" onclick="sendAction('tema')">📘 De qué trata</button>
+        <button type="button" onclick="sendAction('resumen')">📝 Resumen</button>
+        <button type="button" onclick="sendAction('conclusion')">🔚 Conclusión</button>
+        <button type="button" onclick="sendAction('keywords')">🔑 Palabras clave</button>
+        <button type="button" onclick="sendAction('recomendaciones')">💡 Recomendaciones</button>
+        <button type="button" onclick="sendAction('traduccion')">🌎 Traducción</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    async function sendAction(action) {
+      const fileInput = document.getElementById('pdf-file');
+      const chatBox = document.getElementById("chat-box");
+
+      if (!fileInput.files.length) {
+        alert("Por favor, sube un archivo PDF primero.");
+        return;
+      }
+
+      // Mostrar el mensaje del usuario
+      const userDiv = document.createElement("div");
+      userDiv.className = "user-message";
+      const messages = {
+        tema: "¿De qué trata el documento?",
+        resumen: "Quiero un resumen detallado.",
+        conclusion: "Dame una conclusión desarrollada.",
+        keywords: "Muéstrame las palabras clave.",
+        recomendaciones: "Dame algunas recomendaciones o aplicaciones.",
+        traduccion: "Tradúcelo al inglés, por favor."
+      };
+      userDiv.innerHTML = `<strong>Tú:</strong> ${messages[action] || 'Analiza el documento.'}`;
+      chatBox.appendChild(userDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // Mostrar indicador de carga animado
+      const loadingDiv = document.createElement("div");
+      loadingDiv.className = "bot-message loading";
+      loadingDiv.innerHTML = `<div class="loader"></div> Falcon está procesando el documento...`;
+      chatBox.appendChild(loadingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // Enviar el archivo y acción al backend
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      formData.append("action", action);
+
+      try {
+        const response = await fetch("/process", {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+
+        // Eliminar el mensaje de carga
+        chatBox.removeChild(loadingDiv);
+
+        // Mostrar el texto del documento si corresponde
+        if (data.text) {
+          const pdfDiv = document.createElement("div");
+          pdfDiv.className = "pdf-text";
+          pdfDiv.innerHTML = `<b>📄 Texto del documento:</b><br>${data.text}`;
+          chatBox.appendChild(pdfDiv);
+        }
+
+        // Mostrar respuesta del bot
+        const botDiv = document.createElement("div");
+        botDiv.className = "bot-message";
+        botDiv.innerHTML = `<strong>Falcon:</strong> ${data.response}`;
+        chatBox.appendChild(botDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+      } catch (error) {
+        chatBox.removeChild(loadingDiv);
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "bot-message error";
+        errorDiv.innerHTML = `<strong>Falcon:</strong> ❌ Error al procesar el documento.`;
+        chatBox.appendChild(errorDiv);
+      }
+    }
+  </script>
+</body>
+</html>

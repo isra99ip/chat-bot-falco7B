@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+transformers
+torch
+PyPDF2
+jinja2
+accelerate
